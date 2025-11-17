@@ -59,9 +59,14 @@ def runQAOA(req: func.HttpRequest) -> func.HttpResponse:
 
     # run qaoa circuit
     def QAOAiteration(params):
+        
+        # cast gamma, beta as python float to ensure q# compatibility 
+        gamma = float(params[0])
+        beta = float(params[1])
+
         # submit job
         job = MyTarget.submit(qsharp.compile(
-            f"QuantumLibrary.runQAOA({ params[0] , params[1] })"), "single QAOA run", shots=500)
+            f"QuantumLibrary.runQAOA({ gamma , beta })"), "single QAOA run", shots=500)
         
         # wait for completion 
         job.wait_until_completed() 
@@ -80,9 +85,13 @@ def runQAOA(req: func.HttpRequest) -> func.HttpResponse:
         # optimize expectation value
         res = minimize(QAOAiteration, [1.0, 1.0], method='COBYLA')
 
+        # cast gamma, beta as python float to ensure q# compatibility
+        final_gamma = float(res.x[0])
+        final_beta = float(res.x[1])
+
         # determine soultion with optimized gamma and beta
         job = MyTarget.submit(qsharp.compile(
-            f"QuantumLibrary.runQAOA({ res.x[0] , res.x[1] })"), "last run", shots=500)
+            f"QuantumLibrary.runQAOA({ final_gamma , final_beta })"), "last run", shots=500)
 
     # get last job in session
     jobs_in_session = session.list_jobs()
